@@ -1,11 +1,8 @@
 import { Observable } from '@rxjs/observable';
-import type { ObservableInput, ObservedValueOf, OperatorFunction, SchedulerLike } from '../types.js';
+import type { ObservableInput, OperatorFunction, SchedulerLike } from '../types.js';
 import { mergeInternals } from './mergeInternals.js';
 
-export function expand<T, O extends ObservableInput<unknown>>(
-  project: (value: T, index: number) => O,
-  concurrent?: number
-): OperatorFunction<T, ObservedValueOf<O>>;
+export function expand<I>(project: (value: I, index: number) => ObservableInput<I>, concurrent?: number): OperatorFunction<I, I>;
 
 /**
  * Recursively projects each source value to an Observable which is merged in
@@ -57,10 +54,7 @@ export function expand<T, O extends ObservableInput<unknown>>(
  * the output Observable and merging the results of the Observables obtained
  * from this transformation.
  */
-export function expand<T, O extends ObservableInput<unknown>>(
-  project: (value: T, index: number) => O,
-  concurrent = Infinity
-): OperatorFunction<T, ObservedValueOf<O>> {
+export function expand<I>(project: (value: I, index: number) => ObservableInput<I>, concurrent = Infinity): OperatorFunction<I, I> {
   concurrent = (concurrent || 0) < 1 ? Infinity : concurrent;
   return (source) =>
     new Observable((subscriber) =>
@@ -69,8 +63,7 @@ export function expand<T, O extends ObservableInput<unknown>>(
         source,
         subscriber,
 
-        // HACK: Cast because TypeScript seems to get confused here.
-        project as (value: T, index: number) => ObservableInput<ObservedValueOf<O>>,
+        project,
         concurrent,
 
         // onBeforeNext
